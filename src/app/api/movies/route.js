@@ -1,16 +1,14 @@
 // src/app/api/movies/route.js
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { getCollection } from "@/lib/db";
 
 export async function POST(request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
-
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
-
     const jsonData = JSON.parse(await file.text());
     const updates = { created: 0, updated: 0, errors: 0 };
 
@@ -65,15 +63,21 @@ export async function POST(request) {
 
 async function processMovie(movieData, releaseType) {
   try {
+    const moviesCollection = await getCollection("movies");
+
     // First, try to find the movie by title
-    const existingMovie = await prisma.movie.findFirst({
-      where: { title: movieData.title },
-      include: { ottRelease: true },
+    const existingMovie = await moviesCollection.findOne({
+      title: movieData.title,
     });
+
+    // Validate releaseDate
+    const releaseDate = isValidDate(movieData.release_date)
+      ? new Date(movieData.release_date)
+      : null;
 
     const movieDetails = {
       title: movieData.title,
-      releaseDate: new Date(movieData.release_date),
+      releaseDate,
       director: movieData.director,
       cast: movieData.cast,
       releaseType,
@@ -87,64 +91,52 @@ async function processMovie(movieData, releaseType) {
         movieDetails,
         movieData.ott_release
       );
-
       if (!hasChanges) {
         return { action: "unchanged" };
       }
 
-      // Update existing movie with changes
-      await prisma.movie.update({
-        where: { id: existingMovie.id },
-        data: {
-          ...movieDetails,
-          ottRelease: movieData.ott_release
-            ? {
-                upsert: {
-                  create: {
-                    date:
-                      movieData.ott_release.date !== "TBD"
-                        ? new Date(movieData.ott_release.date)
-                        : null,
-                    platform:
-                      movieData.ott_release.platform !== "TBD"
-                        ? movieData.ott_release.platform
-                        : null,
-                  },
-                  update: {
-                    date:
-                      movieData.ott_release.date !== "TBD"
-                        ? new Date(movieData.ott_release.date)
-                        : null,
-                    platform:
-                      movieData.ott_release.platform !== "TBD"
-                        ? movieData.ott_release.platform
-                        : null,
-                  },
-                },
-              }
-            : undefined,
-        },
-      });
+      // Validate ott_release date
+      const ottReleaseDate = isValidDate(movieData.ott_release?.date)
+        ? new Date(movieData.ott_release.date)
+        : null;
 
+      // Update existing movie with changes
+      await moviesCollection.updateOne(
+        { _id: existingMovie._id },
+        {
+          $set: {
+            ...movieDetails,
+            ottRelease: movieData.ott_release
+              ? {
+                  date: ottReleaseDate,
+                  platform:
+                    movieData.ott_release.platform !== "TBD"
+                      ? movieData.ott_release.platform
+                      : null,
+                }
+              : null,
+          },
+        }
+      );
       return { action: "updated" };
     }
 
-    // Create new movie if it doesn't exist
-    await prisma.movie.create({
-      data: {
-        ...movieDetails,
-        ottRelease:
-          movieData.ott_release && movieData.ott_release.date !== "TBD"
-            ? {
-                create: {
-                  date: new Date(movieData.ott_release.date),
-                  platform: movieData.ott_release.platform,
-                },
-              }
-            : undefined,
-      },
-    });
+    // Validate ott_release date for new movie
+    const ottReleaseDate = isValidDate(movieData.ott_release?.date)
+      ? new Date(movieData.ott_release.date)
+      : null;
 
+    // Create new movie if it doesn't exist
+    await moviesCollection.insertOne({
+      ...movieDetails,
+      ottRelease:
+        movieData.ott_release && movieData.ott_release.date !== "TBD"
+          ? {
+              date: ottReleaseDate,
+              platform: movieData.ott_release.platform,
+            }
+          : null,
+    });
     return { action: "created" };
   } catch (error) {
     console.error("Error processing movie:", movieData.title, error);
@@ -155,8 +147,8 @@ async function processMovie(movieData, releaseType) {
 function checkForChanges(existingMovie, newDetails, newOttRelease) {
   // Check basic movie details
   if (
-    existingMovie.releaseDate.toISOString() !==
-      new Date(newDetails.releaseDate).toISOString() ||
+    (existingMovie.releaseDate?.toISOString() || null) !==
+      (newDetails.releaseDate?.toISOString() || null) ||
     existingMovie.director !== newDetails.director ||
     !arraysEqual(existingMovie.cast, newDetails.cast) ||
     existingMovie.platform !== newDetails.platform
@@ -168,9 +160,10 @@ function checkForChanges(existingMovie, newDetails, newOttRelease) {
   if (newOttRelease && existingMovie.ottRelease) {
     if (
       newOttRelease.date !== "TBD" &&
-      (!existingMovie.ottRelease.date ||
-        existingMovie.ottRelease.date.toISOString() !==
-          new Date(newOttRelease.date).toISOString())
+      (existingMovie.ottRelease.date?.toISOString() || null) !==
+        (isValidDate(newOttRelease.date)
+          ? new Date(newOttRelease.date).toISOString()
+          : null)
     ) {
       return true;
     }
@@ -193,4 +186,11 @@ function checkForChanges(existingMovie, newDetails, newOttRelease) {
 function arraysEqual(arr1, arr2) {
   if (arr1.length !== arr2.length) return false;
   return arr1.every((item, index) => item === arr2[index]);
+}
+
+// Helper function to validate date strings
+function isValidDate(dateString) {
+  if (!dateString || typeof dateString !== "string") return false;
+  const date = new Date(dateString);
+  return !isNaN(date.getTime());
 }

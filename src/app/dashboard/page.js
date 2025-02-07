@@ -1,13 +1,16 @@
 // src/app/dashboard/page.js
 import MovieForm from "@/components/movies/movie-form";
 import MovieList from "@/components/movies/movie-list";
-import prisma from "@/lib/prisma";
+import { getCollection } from "@/lib/db";
 
 export default async function DashboardPage() {
-  const movies = await prisma.movie.findMany({
-    include: { ottRelease: true },
-    orderBy: { releaseDate: "desc" },
-  });
+  const moviesCollection = await getCollection("movies");
+
+  // Fetch all movies
+  const movies = await moviesCollection
+    .find({})
+    .sort({ releaseDate: -1 }) // Sort by releaseDate in descending order
+    .toArray();
 
   return (
     <div className="container mx-auto py-8 space-y-8">
