@@ -20,17 +20,17 @@ export default function MovieCard({ movie }) {
           className="w-full h-[270px] md:h-[300px] object-cover"
         />
         <div className="absolute top-2 right-2 flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-black/60 rounded px-1.5 py-0.5">
+          {/* <div className="flex items-center gap-1 bg-black/60 rounded px-1.5 py-0.5">
             <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
             <span className="text-white text-xs">8.5</span>
-          </div>
-          <Button
+          </div> */}
+          {/* <Button
             variant="outline"
             size="sm"
             className="text-xs h-7 bg-black/60 border-white/20 text-white"
           >
             + Watchlist
-          </Button>
+          </Button> */}
         </div>
       </div>
       <div className="p-3 space-y-1">
@@ -49,14 +49,14 @@ export default function MovieCard({ movie }) {
             {formatDate(movie.releaseDate)}
           </p>
         )}
-        <div className="flex flex-col gap-2 mt-2">
+        {/* <div className="flex flex-col gap-2 mt-2">
           <Button variant="secondary" className="w-full text-xs h-7">
             Watch options
           </Button>
           <Button variant="outline" className="w-full text-xs h-7">
             Trailer
           </Button>
-        </div>
+        </div> */}
       </div>
     </div>
   );
