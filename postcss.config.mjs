@@ -3,9 +3,6 @@ const config = {
   plugins: {
     tailwindcss: {},
   },
-  experimental: {
-    turbo: false, // Disable Turbopack
-  },
 };
 
 export default config;
