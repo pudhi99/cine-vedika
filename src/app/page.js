@@ -9,7 +9,10 @@ function serializeDocument(doc) {
   return {
     id: doc._id.toString(),
     title: doc.title,
-    releaseDate: doc.releaseDate?.toISOString(),
+    releaseDate:
+      doc.releaseDate instanceof Date
+        ? doc.releaseDate.toISOString()
+        : doc.releaseDate,
     director: doc.director,
     cast: doc.cast,
     releaseType: doc.releaseType,
@@ -17,7 +20,10 @@ function serializeDocument(doc) {
     imageUrl: doc.imageUrl,
     ottRelease: doc.ottRelease
       ? {
-          date: doc.ottRelease.date?.toISOString(),
+          date:
+            doc.ottRelease.date instanceof Date
+              ? doc.ottRelease.date.toISOString()
+              : doc.ottRelease.date,
           platform: doc.ottRelease.platform,
         }
       : null,
@@ -31,8 +37,10 @@ export default async function HomePage() {
   // Theatrical Releases
   const latestTheatricalReleases = await moviesCollection
     .find({
-      releaseType: "THEATRICAL",
-      releaseDate: { $lte: today },
+      releaseDate: {
+        $exists: true,
+        $lte: today,
+      },
     })
     .sort({ releaseDate: -1 })
     .limit(7)
@@ -40,18 +48,22 @@ export default async function HomePage() {
 
   const upcomingTheatricalReleases = await moviesCollection
     .find({
-      releaseType: "THEATRICAL",
-      releaseDate: { $gt: today },
+      releaseDate: {
+        $exists: true,
+        $gt: today,
+      },
     })
     .sort({ releaseDate: 1 })
-    .limit(10)
+    .limit(20)
     .toArray();
 
   // OTT Releases
   const latestOttReleases = await moviesCollection
     .find({
-      "ottRelease.date": { $exists: true },
-      "ottRelease.date": { $lte: today },
+      "ottRelease.date": {
+        $exists: true,
+        $lte: today,
+      },
     })
     .sort({ "ottRelease.date": -1 })
     .limit(7)
@@ -59,42 +71,54 @@ export default async function HomePage() {
 
   const upcomingOttReleases = await moviesCollection
     .find({
-      "ottRelease.date": { $exists: true },
-      "ottRelease.date": { $gt: today },
+      "ottRelease.date": {
+        $exists: true,
+        $gt: today,
+      },
     })
     .sort({ "ottRelease.date": 1 })
     .limit(10)
     .toArray();
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      <h1 className="text-3xl font-bold">Upcoming Releases</h1>
-      <Tabs defaultValue="theatrical" className="w-full">
-        <TabsList className="w-full justify-start">
-          <TabsTrigger value="theatrical">Theatrical Releases</TabsTrigger>
-          <TabsTrigger value="ott">OTT Releases</TabsTrigger>
-        </TabsList>
-        <TabsContent value="theatrical" className="space-y-8">
-          <MovieList
-            movies={latestTheatricalReleases.map(serializeDocument)}
-            title="Latest Theatrical Releases"
-          />
-          <MovieList
-            movies={upcomingTheatricalReleases.map(serializeDocument)}
-            title="Upcoming Theatrical Releases"
-          />
-        </TabsContent>
-        <TabsContent value="ott" className="space-y-8">
-          <MovieList
-            movies={latestOttReleases.map(serializeDocument)}
-            title="Latest OTT Releases"
-          />
-          <MovieList
-            movies={upcomingOttReleases.map(serializeDocument)}
-            title="Upcoming OTT Releases"
-          />
-        </TabsContent>
-      </Tabs>
+    <div className="container mx-auto px-4 sm:px-6">
+      <div className="flex items-center justify-between py-6">
+        <div className="flex items-baseline gap-x-2">
+          <h1 className="text-2xl font-semibold text-primary">Cine Vedhika</h1>
+          <span className="text-sm text-muted-foreground">Telugu Movies</span>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <Tabs defaultValue="theatrical" className="w-full">
+          <TabsList className="w-full justify-start">
+            <TabsTrigger value="theatrical">Theatrical Releases</TabsTrigger>
+            <TabsTrigger value="ott">OTT Releases</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="theatrical" className="space-y-8 mt-6">
+            <MovieList
+              movies={latestTheatricalReleases.map(serializeDocument)}
+              title="Latest Theatrical Releases"
+            />
+            <MovieList
+              movies={upcomingTheatricalReleases.map(serializeDocument)}
+              title="Upcoming Theatrical Releases"
+            />
+          </TabsContent>
+
+          <TabsContent value="ott" className="space-y-8 mt-6">
+            <MovieList
+              movies={latestOttReleases.map(serializeDocument)}
+              title="Latest OTT Releases"
+            />
+            <MovieList
+              movies={upcomingOttReleases.map(serializeDocument)}
+              title="Upcoming OTT Releases"
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

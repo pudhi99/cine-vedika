@@ -12,7 +12,6 @@ export default function MovieList({ movies, title }) {
     align: "start",
     containScroll: "trimSnaps",
     dragFree: true,
-    wheelMode: "scroll", // Enable mouse wheel scrolling
     skipSnaps: true,
   });
 
@@ -51,10 +50,7 @@ export default function MovieList({ movies, title }) {
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex gap-4">
             {movies?.map((movie) => (
-              <div
-                className="flex-[0_0_200px]" // Reduced from 280px to 200px
-                key={movie.id}
-              >
+              <div className="flex-none w-[160px] md:w-[200px]" key={movie.id}>
                 <MovieCard movie={movie} />
               </div>
             ))}

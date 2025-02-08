@@ -5,6 +5,7 @@ const nextConfig = {
       "upload.wikimedia.org",
       "commons.wikimedia.org",
       "m.media-amazon.com",
+      "assets-in.bmscdn.com",
     ],
     remotePatterns: [
       {

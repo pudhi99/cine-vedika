@@ -75,8 +75,10 @@ export default function EditMoviePage({ params }) {
         const response = await fetch(`/api/movies/${movieId}`);
         const movie = await response.json();
 
+        console.log(movie);
+
         if (movie) {
-          const formattedDate = new Date(movie.releaseDate)
+          const formattedDate = new Date(movie?.releaseDate)
             .toISOString()
             .split("T")[0];
 
@@ -84,9 +86,9 @@ export default function EditMoviePage({ params }) {
             ...movie,
             releaseDate: formattedDate,
             cast: movie.cast.join(", "),
-            platform: movie.platform || "",
-            ottRelease: movie.ottRelease
-              ? new Date(movie.ottRelease).toISOString().split("T")[0]
+            platform: movie.platform || movie.ottRelease?.platform || "",
+            ottRelease: movie.ottRelease?.date
+              ? new Date(movie.ottRelease.date).toISOString().split("T")[0]
               : "",
           });
 

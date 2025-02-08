@@ -1,4 +1,3 @@
-// src/components/movies/movie-form.js
 "use client";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -7,9 +6,15 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form } from "@/components/ui/form";
-
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+
+// Helper function to ensure consistent date format
+const formatDate = (date) => {
+  if (!date) return null;
+  const d = new Date(date);
+  return d.toISOString();
+};
 
 const formSchema = z.object({
   file: z.any().refine((file) => file?.name?.endsWith(".json"), {
@@ -40,16 +45,13 @@ export default function MovieForm() {
       });
 
       const result = await response.json();
-
       if (!response.ok) throw new Error(result.error || "Failed to upload");
 
       setStats(result.updates);
-
       toast({
         title: "Success",
         description: result.message,
       });
-
       form.reset();
     } catch (error) {
       toast({
@@ -76,7 +78,6 @@ export default function MovieForm() {
           </Button>
         </form>
       </Form>
-
       {stats && (
         <Alert>
           <AlertDescription>
