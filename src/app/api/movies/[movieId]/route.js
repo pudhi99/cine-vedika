@@ -39,18 +39,20 @@ export async function PUT(request, { params }) {
     const moviesCollection = await getCollection("movies");
     const data = await request.json();
 
+    // Structure the ottRelease object correctly
+    const ottReleaseData = data.ottRelease
+      ? {
+          date: parseDate(data.ottRelease),
+          platform: data.platform || null,
+        }
+      : null;
+
     // Convert dates to Date objects before storing
     const updateData = {
       ...data,
-      releaseDate: data.releaseDate ? parseDate(data.releaseDate) : undefined,
-      ottRelease: data.ottRelease
-        ? {
-            ...data.ottRelease,
-            date: data.ottRelease.date
-              ? parseDate(data.ottRelease.date)
-              : undefined,
-          }
-        : undefined,
+      releaseDate: parseDate(data.releaseDate),
+      platform: null, // Set platform to null as it should be part of ottRelease
+      ottRelease: ottReleaseData,
     };
 
     const updateResult = await moviesCollection.updateOne(
