@@ -1,4 +1,5 @@
 // src/components/movies/movie-card.js
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
@@ -18,7 +19,19 @@ export default function MovieCard({ movie }) {
   };
 
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col">
+      {movie.imageUrl && (
+        <div className="relative w-full h-64 overflow-hidden">
+          <Image
+            src={movie.imageUrl}
+            alt={`${movie.title} poster`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 348px) 100vw, (max-width: 258px) 50vw, 33vw"
+          />
+        </div>
+      )}
+
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle>{movie.title}</CardTitle>
@@ -27,7 +40,8 @@ export default function MovieCard({ movie }) {
           </Badge>
         </div>
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="flex-grow">
         <div className="space-y-2">
           <p>
             <strong>Release Date:</strong> {formatDate(movie.releaseDate)}

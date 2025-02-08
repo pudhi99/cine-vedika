@@ -2,6 +2,69 @@
 import { NextResponse } from "next/server";
 import { getCollection } from "@/lib/db";
 
+async function fetchMovieInfoFromWikipedia(title) {
+  console.log(title, title.replace(/ /g, "_"));
+  try {
+    // First variation: replace spaces with underscores
+    const formattedTitle = title.replace(/ /g, "_");
+    const apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
+      formattedTitle
+    )}`;
+
+    const response = await fetch(apiUrl);
+
+    // If the response is not successful, try the next variation
+    if (!response.ok) {
+      return await tryAlternativeTitleFormat(title);
+    }
+
+    const data = await response.json();
+
+    // Check if titles match (ignoring special characters and case)
+    if (data.type != "standard") {
+      // If titles don't match, try the alternative format
+      return await tryAlternativeTitleFormat(title);
+    }
+
+    // Check if originalimage exists
+    const imageUrl = data.originalimage?.source || null;
+
+    return { imageUrl };
+  } catch (error) {
+    console.error("Error fetching Wikipedia data:", error);
+    return await tryAlternativeTitleFormat(title);
+  }
+}
+
+// Helper function to try alternative title format
+async function tryAlternativeTitleFormat(title) {
+  try {
+    // Second variation: add "(film)" suffix
+    const alternativeTitle = `${title.replace(/ /g, "_")}_(film)`;
+    console.log("alternative method ", title, alternativeTitle);
+    const alternativeApiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
+      alternativeTitle
+    )}`;
+
+    const alternativeResponse = await fetch(alternativeApiUrl);
+
+    // If the response is not successful, return null
+    if (!alternativeResponse.ok) {
+      return { imageUrl: null };
+    }
+
+    const alternativeData = await alternativeResponse.json();
+
+    // Check if originalimage exists
+    const imageUrl = alternativeData.originalimage?.source || null;
+
+    return { imageUrl };
+  } catch (error) {
+    console.error("Error fetching alternative Wikipedia data:", error);
+    return { imageUrl: null };
+  }
+}
+
 export async function POST(request) {
   try {
     const formData = await request.formData();
@@ -91,6 +154,7 @@ async function processMovie(movieData, releaseType) {
         movieDetails,
         movieData.ott_release
       );
+
       if (!hasChanges) {
         return { action: "unchanged" };
       }
@@ -102,7 +166,7 @@ async function processMovie(movieData, releaseType) {
 
       // Update existing movie with changes
       await moviesCollection.updateOne(
-        { _id: existingMovie._id },
+        { _id: existingMovie._id }, // Changed from *id to _id
         {
           $set: {
             ...movieDetails,
@@ -118,8 +182,12 @@ async function processMovie(movieData, releaseType) {
           },
         }
       );
+
       return { action: "updated" };
     }
+
+    // For new movies, fetch Wikipedia information
+    const { imageUrl } = await fetchMovieInfoFromWikipedia(movieData.title);
 
     // Validate ott_release date for new movie
     const ottReleaseDate = isValidDate(movieData.ott_release?.date)
@@ -129,6 +197,7 @@ async function processMovie(movieData, releaseType) {
     // Create new movie if it doesn't exist
     await moviesCollection.insertOne({
       ...movieDetails,
+      imageUrl, // Add Wikipedia image URL
       ottRelease:
         movieData.ott_release && movieData.ott_release.date !== "TBD"
           ? {
@@ -137,6 +206,7 @@ async function processMovie(movieData, releaseType) {
             }
           : null,
     });
+
     return { action: "created" };
   } catch (error) {
     console.error("Error processing movie:", movieData.title, error);
@@ -167,6 +237,7 @@ function checkForChanges(existingMovie, newDetails, newOttRelease) {
     ) {
       return true;
     }
+
     if (
       newOttRelease.platform !== "TBD" &&
       existingMovie.ottRelease.platform !== newOttRelease.platform
