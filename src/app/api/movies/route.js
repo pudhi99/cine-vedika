@@ -65,6 +65,46 @@ async function tryAlternativeTitleFormat(title) {
   }
 }
 
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search") || "";
+
+    const moviesCollection = await getCollection("movies");
+
+    console.log(moviesCollection, "moviesCollection");
+
+    // Create search query
+    const query = search ? { title: { $regex: search, $options: "i" } } : {};
+
+    // Get total count for pagination
+    const total = await moviesCollection.countDocuments(query);
+
+    // Get paginated results
+    const movies = await moviesCollection
+      .find(query)
+      .sort({ releaseDate: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .toArray();
+
+    return NextResponse.json({
+      movies,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.error("Error fetching movies:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch movies" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request) {
   try {
     const formData = await request.formData();

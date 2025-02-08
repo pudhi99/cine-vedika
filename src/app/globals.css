@@ -70,3 +70,28 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.embla {
+  --slide-spacing: 1rem;
+  --slide-size: 50%;
+  --slide-height: 19rem;
+}
+
+.embla__container {
+  backface-visibility: hidden;
+  display: flex;
+  touch-action: pan-y;
+  margin-left: calc(var(--slide-spacing) * -1);
+}
+
+@media (min-width: 768px) {
+  .embla {
+    --slide-size: 33.33%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .embla {
+    --slide-size: 25%;
+  }
+}
