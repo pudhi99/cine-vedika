@@ -211,10 +211,10 @@ async function fetchWikipediaData(title) {
 
 export async function GET(request, { params }) {
   try {
-    const { movieId } = params;
+    const { movieName } = params;
     const moviesCollection = await getCollection("movies");
     const movie = await moviesCollection.findOne({
-      _id: new ObjectId(movieId),
+      title: movieName,
     });
 
     if (!movie) {

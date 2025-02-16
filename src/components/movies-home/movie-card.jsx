@@ -13,7 +13,7 @@ export default function MovieCard({ movie }) {
   };
 
   return (
-    <Link href={`/movie/${movie.id}`} className="block">
+    <Link href={`/movie/${movie.title}`} className="block">
       <div className="bg-card rounded-lg overflow-hidden transition-transform hover:scale-[1.02] hover:shadow-lg">
         <div className="relative w-full">
           <img

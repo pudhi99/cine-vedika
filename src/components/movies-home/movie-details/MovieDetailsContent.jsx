@@ -92,7 +92,7 @@ const CastMember = ({ member }) => (
   </Card>
 );
 
-export function MovieDetailsContent({ movieId }) {
+export function MovieDetailsContent({ movieName }) {
   const [movie, setMovie] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -101,7 +101,7 @@ export function MovieDetailsContent({ movieId }) {
     async function fetchMovie() {
       try {
         setLoading(true);
-        const response = await fetch(`/api/movie-home/${movieId}`);
+        const response = await fetch(`/api/movie-home/${movieName}`);
         if (!response.ok) throw new Error("Failed to fetch movie details");
         const data = await response.json();
         console.log(data, "data");
@@ -112,10 +112,10 @@ export function MovieDetailsContent({ movieId }) {
         setLoading(false);
       }
     }
-    if (movieId) {
+    if (movieName) {
       fetchMovie();
     }
-  }, [movieId]);
+  }, [movieName]);
 
   if (loading) {
     return <MovieDetailsSkeleton />;
