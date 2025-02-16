@@ -98,7 +98,7 @@ export const metadata = {
   },
   manifest: "/site.webmanifest",
   verification: {
-    google: "google-site-verification-code",
+    google: "Fos7_lSi_2HDw4RzlHudjLghiVMyKA_4qWknDr79P9w",
     yandex: "yandex-verification-code",
   },
   applicationName: "Cine Vedika",
